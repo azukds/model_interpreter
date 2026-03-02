@@ -37,6 +37,7 @@ dev = [
     "pytest-benchmark",
     "prek",
     "codespell",
+    "typos",
     "hypothesis",
     "mypy",
     "ruff",
