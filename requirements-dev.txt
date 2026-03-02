@@ -6,6 +6,8 @@ cfgv==3.4.0
     # via pre-commit
 cloudpickle==3.1.0
     # via shap
+codespell==2.4.1
+    # via model-interpreter (pyproject.toml)
 colorama==0.4.6 ; sys_platform == 'win32'
     # via
     #   pytest
