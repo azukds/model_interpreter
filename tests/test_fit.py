@@ -92,7 +92,7 @@ class TestFit(object):
         """Test to check if ValueError if is_classification: int is not passed for a non-standard model"""
         with pytest.raises(
             ValueError,
-            match="is_classification input required to fit kernel explainer. True for a classification model, False for a regression model, recieved None",
+            match="is_classification input required to fit kernel explainer. True for a classification model, False for a regression model, received None",
         ):
             MI.fit(DBS_model, X_train=kernel_X_train)
 

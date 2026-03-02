@@ -27,10 +27,12 @@ from model_interpreter.interpreter import ModelInterpreter
 
 # generate a classification dataset
 X, y = make_classification(
-n_samples=1000, 
-n_features=4, n_informative=2,
- n_redundant=0, random_state=0, 
-shuffle=False
+    n_samples=1000,
+    n_features=4,
+    n_informative=2,
+    n_redundant=0,
+    random_state=0,
+    shuffle=False,
 )
 
 # fit a model
@@ -45,11 +47,10 @@ model_interpreter.fit(clf)
 # return feature contribution importances for a single row
 single_row = X.head(1)
 contribution_list = single_model_contribution.transform(
-single_row, return_type="name_value_dicts"
+    single_row, return_type="name_value_dicts"
 )
 
 print(contribution_list)
-
 ```
 
 Which will return the following output:

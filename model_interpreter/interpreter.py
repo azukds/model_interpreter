@@ -25,7 +25,7 @@ class ModelInterpreter:
         model features, if applicable. The one hot encoded feature names are
         automatically derived based on this list, otherwise they are treated
         normally. eg: passing ["colour"] will aggregate the contributions
-        of fields with a name beggining with "colour_" and then return the
+        of fields with a name beginning with "colour_" and then return the
         aggregated contributions for "colour"
 
     """
@@ -113,7 +113,7 @@ class ModelInterpreter:
 
         if is_classification is None:
             raise ValueError(
-                f"is_classification input required to fit kernel explainer. True for a classification model, False for a regression model, recieved {is_classification}"
+                f"is_classification input required to fit kernel explainer. True for a classification model, False for a regression model, received {is_classification}"
             )
 
         elif (is_classification is True) and (not hasattr(model, "predict_proba")):
@@ -406,7 +406,7 @@ class ModelInterpreter:
 
             return_precision: int, default = 16
                 how many decimal places to round the shap values in the return
-                message to. Default is 16 which mantains the decimal places
+                message to. Default is 16 which maintains the decimal places
                 returned by shap explainers
 
         Return:

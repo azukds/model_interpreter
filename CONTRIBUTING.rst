@@ -1,7 +1,7 @@
 Contributing
 ============
 
-Thanks for your interest in contributing to this package! No contibution is too small! We're hoping it can be made even better through community contributions.
+Thanks for your interest in contributing to this package! No contribution is too small! We're hoping it can be made even better through community contributions.
 
 Requests and feedback
 ---------------------
