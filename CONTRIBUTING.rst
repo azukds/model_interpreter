@@ -24,7 +24,7 @@ Then clone the fork (or this repository if internal);
      git clone https://github.com/lvgig/model_interpreter.git
      cd model_interpreter
 
-Then install tubular and dependencies for development;
+Then install model_interpreter and dependencies for development;
 
    .. code::
 

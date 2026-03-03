@@ -22,7 +22,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: Please provide environment details that will help us reproduce the issue e.g. operating system and tubular/scikit-learn/pandas versions.
+      description: Please provide environment details that will help us reproduce the issue e.g. operating system and numpy/shap/xgboost-cpu versions.
     validations:
       required: true    
   - type: textarea
