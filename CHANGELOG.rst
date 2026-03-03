@@ -16,6 +16,16 @@ Subsections for each version can be one of the following;
 
 Each individual change should have a link to the pull request after the description of the change.
 
+1.0.1 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- Reactivated CI and added PR approval guardrails ([#8](https://github.com/azukds/model_interpreter/pull/8))
+- Updated CI configuration to follow tubular's python-package.yml ([#8](https://github.com/azukds/model_interpreter/pull/8))
+- Switched to prek for pre-commit checks ([#8](https://github.com/azukds/model_interpreter/pull/8))
+- Fixed spelling mistakes and removed stale tubular references ([#8](https://github.com/azukds/model_interpreter/pull/8))
+
 1.0.0 (2024-08-06)
 -------------------
 
