@@ -21,10 +21,10 @@ Each individual change should have a link to the pull request after the descript
 
 Changed
 ^^^^^^^
-- Reactivated CI and added PR approval guardrails ([#8](https://github.com/azukds/model_interpreter/pull/8))
-- Updated CI configuration to follow tubular's python-package.yml ([#8](https://github.com/azukds/model_interpreter/pull/8))
-- Switched to prek for pre-commit checks ([#8](https://github.com/azukds/model_interpreter/pull/8))
-- Fixed spelling mistakes and removed stale tubular references ([#8](https://github.com/azukds/model_interpreter/pull/8))
+- Reactivated CI and added PR approval guardrails (https://github.com/azukds/model_interpreter/pull/8)
+- Updated CI configuration to follow tubular's python-package.yml (https://github.com/azukds/model_interpreter/pull/8)
+- Switched to prek for pre-commit checks (https://github.com/azukds/model_interpreter/pull/8)
+- Fixed spelling mistakes and removed stale tubular references (https://github.com/azukds/model_interpreter/pull/8)
 
 1.0.0 (2024-08-06)
 -------------------
