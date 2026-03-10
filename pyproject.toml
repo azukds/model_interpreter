@@ -50,6 +50,9 @@ dev = [
 
 exclude = ["docs", "examples"]
 
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+
 [tool.ruff.lint]
 select = [
     "E",

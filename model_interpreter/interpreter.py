@@ -28,6 +28,16 @@ class ModelInterpreter:
         of fields with a name beginning with "colour_" and then return the
         aggregated contributions for "colour"
 
+    Examples:
+    ---------
+    >>> features = ['feat_a', 'feat_b', 'feat_c', 'feat_d']
+    >>> mi = ModelInterpreter(features)
+    >>> mi.feature_names
+    ['feat_a', 'feat_b', 'feat_c', 'feat_d']
+
+    >>> mi = ModelInterpreter(features, one_hot_cols=['feat_a'])
+    >>> mi.one_hot_cols
+    ['feat_a']
     """
 
     def __init__(
@@ -158,6 +168,27 @@ class ModelInterpreter:
         Returns:
         -----------
         model explainer
+
+        Examples:
+        ---------
+        Fit on a tree-based model here for example/demonstration
+
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import make_classification
+        >>> from sklearn.model_selection import train_test_split
+        >>> X, y = make_classification(
+        ...     n_samples=100, n_features=4, n_informative=2,
+        ...     n_redundant=0, random_state=0, shuffle=False,
+        ... )
+        >>> X_train, X_test, y_train, y_test = train_test_split(
+        ...     X, y, test_size=0.33, random_state=42,
+        ... )
+        >>> clf = RandomForestClassifier(max_depth=2, random_state=0, n_estimators=10)
+        >>> _ = clf.fit(X_train, y_train)
+        >>> mi = ModelInterpreter(['a', 'b', 'c', 'd'])
+        >>> explainer = mi.fit(clf)
+        >>> type(explainer).__name__
+        'TreeExplainer'
         """
 
         logging.debug(f"Model interpreter version {self.version_} initialised")
@@ -257,13 +288,12 @@ class ModelInterpreter:
             # this condition hits for multi-classification
             if shap_vals.shape[2] > 2:
                 if predict_class_index not in np.arange(
-                    len(shap_vals) + 1
+                    shap_vals.shape[2]
                 ) or not isinstance(predict_class_index, int):
                     raise ValueError("predicted class not a valid int")
 
             # this condition hits for binary classification
             elif shap_vals.shape[2] == 2:
-                print(shap_vals)
                 if predict_class_index not in [0, 1]:
                     raise ValueError("predicted class must be 0 or 1 for binary data")
 
@@ -305,6 +335,26 @@ class ModelInterpreter:
         Returns:
         ----------
         dict_resp_contrib: dict of feature contributions
+
+        Examples:
+        ---------
+        Rename features with a one-to-one mapping:
+
+        >>> dict_value = {'a': 1.0, 'b': 2.0, 'c': 3.0}
+        >>> dict_contrib = {'a': 0.5, 'b': -0.3, 'c': 0.1}
+        >>> mapping = {'a': 'Alpha', 'b': 'Beta', 'c': 'Gamma'}
+        >>> ModelInterpreter._get_grouped_contribution(
+        ...     dict_value, dict_contrib, mapping,
+        ... )
+        ({'Alpha': 1.0, 'Beta': 2.0, 'Gamma': 3.0}, {'Alpha': 0.5, 'Beta': -0.3, 'Gamma': 0.1})
+
+        Group features together (contributions are summed):
+
+        >>> grouping = {'a': 'G1', 'b': 'G1', 'c': 'G2'}
+        >>> ModelInterpreter._get_grouped_contribution(
+        ...     dict_value, dict_contrib, grouping,
+        ... )
+        (None, {'G1': 0.2, 'G2': 0.1})
         """
 
         if not isinstance(feature_mappings, dict):
@@ -413,6 +463,242 @@ class ModelInterpreter:
         -----------
         Features and their contributions in structure according to specified
         return_type
+
+        Examples:
+        ---------
+        **Binary classification (RandomForest / tree-based):**
+
+        >>> from sklearn.ensemble import RandomForestClassifier
+        >>> from sklearn.datasets import make_classification
+        >>> from sklearn.model_selection import train_test_split
+        >>> X, y = make_classification(
+        ...     n_samples=1000, n_features=4, n_informative=2,
+        ...     n_redundant=0, random_state=0, shuffle=False,
+        ... )
+        >>> X_train, X_test, y_train, y_test = train_test_split(
+        ...     X, y, test_size=0.33, random_state=42,
+        ... )
+        >>> clf = RandomForestClassifier(max_depth=2, random_state=0)
+        >>> _ = clf.fit(X_train, y_train)
+        >>> features = ['feature1', 'feature2', 'feature3', 'feature4']
+        >>> mi = ModelInterpreter(features)
+        >>> _ = mi.fit(clf)
+        >>> single_row = X[0]
+
+        Default return type (name_value_dicts), sorted by absolute contribution:
+
+        >>> mi.transform(single_row, return_precision=4)
+        [{'Name': 'feature2', 'Value': -0.3491}, {'Name': 'feature1', 'Value': -0.0039}, {'Name': 'feature4', 'Value': 0.0032}, {'Name': 'feature3', 'Value': 0.0014}]
+
+        Setting return_feature_values to True returns a tuple of (feature value, contribution) for each feature instead of just the contribution. Note that feature values are not returned when return_type is set to 'name_value_dicts' regardless of the setting of return_feature_values as this return type is designed for contributions only.
+
+        >>> mi.transform(single_row, return_feature_values=True, return_type="dicts")
+        [{'feature2': (np.float64(-1.2990134593088984), -0.3491295830480707)}, {'feature1': (np.float64(-1.6685316675305422), -0.0039231513013799)}, {'feature4': (np.float64(-0.6036204360190907), 0.0031653931724603)}, {'feature3': (np.float64(0.27464720361244455), 0.0013787609499949)}]
+
+        Return as a list of single-key dicts:
+
+        >>> mi.transform(single_row, return_type='dicts', return_precision=4)
+        [{'feature2': -0.3491}, {'feature1': -0.0039}, {'feature4': 0.0032}, {'feature3': 0.0014}]
+
+        Return as a single dict:
+
+        >>> mi.transform(single_row, return_type='single_dict', return_precision=4)
+        {'feature2': -0.3491, 'feature1': -0.0039, 'feature4': 0.0032, 'feature3': 0.0014}
+
+        Return as a list of tuples:
+
+        >>> mi.transform(single_row, return_type='tuples', return_precision=4)
+        [('feature2', -0.3491), ('feature1', -0.0039), ('feature4', 0.0032), ('feature3', 0.0014)]
+
+        Rename features using a one-to-one mapping. You can provide a `feature_mapping` dictionary which can either map feature names to more interpretable names, or group features together:
+
+        >>> mapping = {
+        ...     'feature1': 'feature 1 was mapped', 'feature2': 'feature 2 was mapped',
+        ...     'feature3': 'feature 3 was mapped', 'feature4': 'feature 4 was mapped',
+        ... }
+        >>> mi.transform(
+        ...     single_row, feature_mappings=mapping,
+        ... )
+        [{'Name': 'feature 2 was mapped', 'Value': -0.3491295830480707}, {'Name': 'feature 1 was mapped', 'Value': -0.0039231513013799}, {'Name': 'feature 4 was mapped', 'Value': 0.0031653931724603}, {'Name': 'feature 3 was mapped', 'Value': 0.0013787609499949}]
+
+        Grouping features together by creating groups for the number of rooms and location. The resulting grouped contributions equal the sum of the individual feature contributions:
+
+        >>> grouping_dict = {
+        ...     "feature1": "feature 1 was mapped",
+        ...     "feature2": "feature 2 and 3 was mapped",
+        ...     "feature3": "feature 2 and 3 was mapped",
+        ...     "feature4": "feature 4 was mapped",
+        ... }
+        >>> mi.transform(
+        ...     single_row, feature_mappings=grouping_dict,
+        ... )
+        [{'Name': 'feature 2 and 3 was mapped', 'Value': -0.3477508220980758}, {'Name': 'feature 1 was mapped', 'Value': -0.0039231513013799}, {'Name': 'feature 4 was mapped', 'Value': 0.0031653931724603}]
+
+        Return only the top n features:
+
+        >>> mi.transform(
+        ...     single_row, n_return=2,
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature2': -0.3491, 'feature1': -0.0039}
+
+        Sort by absolute contribution (explicitly using sorting='abs'):
+
+        >>> mi.transform(
+        ...     single_row, sorting='abs',
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature2': -0.3491, 'feature1': -0.0039, 'feature4': 0.0032, 'feature3': 0.0014}
+
+        Sort in descending order (positive first):
+
+        >>> mi.transform(
+        ...     single_row, sorting='positive',
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature4': 0.0032, 'feature3': 0.0014, 'feature1': -0.0039, 'feature2': -0.3491}
+
+        Sort by label (descending when pred_label > 0):
+
+        >>> mi.transform(
+        ...     single_row, sorting='label', pred_label=1,
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature4': 0.0032, 'feature3': 0.0014, 'feature1': -0.0039, 'feature2': -0.3491}
+
+        Sort by label (ascending when pred_label = 0):
+
+        >>> mi.transform(
+        ...     single_row, sorting='label', pred_label=0,
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature2': -0.3491, 'feature1': -0.0039, 'feature3': 0.0014, 'feature4': 0.0032}
+
+        Get contributions for the other class (class 0):
+
+        >>> mi.transform(
+        ...     single_row, predict_class=0,
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature2': 0.3491, 'feature1': 0.0039, 'feature4': -0.0032, 'feature3': -0.0014}
+
+        **Multiclass classification (RandomForest):**
+
+        Use predict_class to select which class to get contributions for.
+        To find the class with the highest predicted probability, use
+        ``np.argmax`` on ``predict_proba``:
+
+        >>> import numpy as np
+        >>> X, y = make_classification(
+        ...     n_samples=1000, n_features=4, n_informative=2,
+        ...     n_redundant=0, random_state=0, shuffle=False,
+        ... )
+        >>> y[200:500] = 2
+        >>> X_train, X_test, y_train, y_test = train_test_split(
+        ...     X, y, test_size=0.33, random_state=42,
+        ... )
+        >>> clf = RandomForestClassifier(max_depth=2, random_state=0)
+        >>> _ = clf.fit(X_train, y_train)
+        >>> mi = ModelInterpreter(features)
+        >>> _ = mi.fit(clf)
+        >>> single_row = X[0]
+
+        Find the class with the highest predicted probability and use it
+        as predict_class.
+
+        >>> probs = clf.predict_proba(single_row.reshape(1, -1))
+        >>> predict_class = int(clf.classes_[np.argmax(probs)])
+        >>> predict_class
+        0
+
+        Get contributions for predicted class (0) and other classes individually:
+
+        >>> mi.transform(
+        ...     single_row, predict_class=0,
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature2': 0.3113, 'feature1': -0.0253, 'feature3': -0.0048, 'feature4': 0.0014}
+
+        >>> mi.transform(
+        ...     single_row, predict_class=1,
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature2': -0.1429, 'feature1': -0.083, 'feature3': 0.0016, 'feature4': -0.0014}
+
+        >>> mi.transform(
+        ...     single_row, predict_class=2,
+        ...     return_type='single_dict', return_precision=4,
+        ... )
+        {'feature2': -0.1684, 'feature1': 0.1082, 'feature3': 0.0032, 'feature4': 0.0}
+
+        **XGBoost regression (tree-based):**
+
+        >>> import xgboost as xgb
+        >>> from sklearn.datasets import fetch_california_housing
+        >>> X, y = fetch_california_housing(return_X_y=True, as_frame=True)
+        >>> X_train, X_test, y_train, y_test = train_test_split(
+        ...     X, y, test_size=0.33, random_state=42,
+        ... )
+        >>> dtrain = xgb.DMatrix(data=X_train, label=y_train)
+        >>> feature_names = list(X.columns)
+        >>> xgb_model = xgb.train(
+        ...     params={"seed": 1, "max_depth": 6, "min_child_weight": 20},
+        ...     dtrain=dtrain,
+        ... )
+        >>> mi = ModelInterpreter(feature_names)
+        >>> _ = mi.fit(xgb_model)
+        >>> single_row = X_test[feature_names].head(1)
+        >>> mi.transform(
+        ...     single_row, return_type='single_dict', return_precision=4,
+        ... )
+        {'MedInc': -0.7147, 'AveOccup': -0.2794, 'Latitude': -0.2189, 'Longitude': -0.1588, 'AveRooms': 0.0442, 'Population': -0.0064, 'HouseAge': -0.0029, 'AveBedrms': -0.0015}
+
+        **XGBoost regression with one-hot encoding:**
+
+        >>> import pandas as pd
+        >>> X, y = fetch_california_housing(return_X_y=True, as_frame=True)
+        >>> X["Over25"] = ["Over25" if a > 25 else "Under25" for a in X["HouseAge"]]
+        >>> X = pd.get_dummies(X, columns=["Over25"])
+        >>> X = X.drop(columns="HouseAge")
+        >>> X_train, X_test, y_train, y_test = train_test_split(
+        ...     X, y, test_size=0.33, random_state=42,
+        ... )
+        >>> dtrain = xgb.DMatrix(data=X_train, label=y_train)
+        >>> feature_names = list(X.columns)
+        >>> xgb_model = xgb.train(
+        ...     params={"seed": 1, "max_depth": 6, "min_child_weight": 20},
+        ...     dtrain=dtrain,
+        ... )
+        >>> mi = ModelInterpreter(feature_names, one_hot_cols=["Over25"])
+        >>> _ = mi.fit(xgb_model)
+        >>> single_row = X_test[feature_names].head(1)
+        >>> mi.transform(
+        ...     single_row, return_type='single_dict', return_precision=4,
+        ... )
+        {'MedInc': -0.7085, 'AveOccup': -0.2854, 'Longitude': -0.2149, 'Latitude': -0.1999, 'Over25': -0.0241, 'Population': -0.0048, 'AveRooms': 0.0046, 'AveBedrms': -0.0011}
+
+        **Non-standard models (KernelExplainer):**
+
+        For non-standard models that require shap.KernelExplainer, you must
+        provide X_train and is_classification when calling fit().
+
+        >>> from sklearn.neighbors import KNeighborsClassifier
+        >>> X, y = make_classification(
+        ...     n_samples=1000, n_features=4, n_informative=2,
+        ...     n_redundant=0, random_state=0, shuffle=False,
+        ... )
+        >>> X_train, X_test, y_train, y_test = train_test_split(
+        ...     X, y, test_size=0.33, random_state=42,
+        ... )
+        >>> model = KNeighborsClassifier(n_neighbors=5)
+        >>> _ = model.fit(X_train, y_train)
+        >>> mi = ModelInterpreter(features)
+        >>> _ = mi.fit(model, X_train=X_train, is_classification=True)
+        >>> single_row = X_test[0].reshape(1, -1)
+        >>> mi.transform(
+        ...     single_row, return_type='single_dict', return_precision=4,
+        ... )
+        {'feature2': -0.3783, 'feature3': -0.033, 'feature1': -0.0177, 'feature4': 0.005}
         """
 
         if sorting not in ["abs", "label", "positive"]:
@@ -503,6 +789,16 @@ class ModelInterpreter:
         Return:
         -----------
         list of dictionaries with structure [{"Name": feature, "Value": contribution}, ... ]
+
+        Examples:
+        ---------
+        >>> ModelInterpreter._name_value_dicts_return({'a': 0.5, 'b': -0.3})
+        [{'Name': 'a', 'Value': 0.5}, {'Name': 'b', 'Value': -0.3}]
+
+        Tuple values (feature_value, contribution) are reduced to contribution only:
+
+        >>> ModelInterpreter._name_value_dicts_return({'a': (1.0, 0.5), 'b': (2.0, -0.3)})
+        [{'Name': 'a', 'Value': 0.5}, {'Name': 'b', 'Value': -0.3}]
         """
 
         dicts = []
@@ -523,6 +819,11 @@ class ModelInterpreter:
         Return:
         -----------
         list of dictionaries with structure [{feature: contribution}, ... ]
+
+        Examples:
+        ---------
+        >>> ModelInterpreter._dicts_return({'a': 0.5, 'b': -0.3})
+        [{'a': 0.5}, {'b': -0.3}]
         """
 
         dicts = []
@@ -539,6 +840,11 @@ class ModelInterpreter:
         Return:
         -----------
         list of tuples with structure [(feature: contribution), ... ]
+
+        Examples:
+        ---------
+        >>> ModelInterpreter._tups_return({'a': 0.5, 'b': -0.3})
+        [('a', 0.5), ('b', -0.3)]
         """
 
         tups = []
