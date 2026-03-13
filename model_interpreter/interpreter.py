@@ -490,26 +490,6 @@ class ModelInterpreter:
         >>> mi.transform(single_row, return_precision=4)
         [{'Name': 'feature2', 'Value': -0.3491}, {'Name': 'feature1', 'Value': -0.0039}, {'Name': 'feature4', 'Value': 0.0032}, {'Name': 'feature3', 'Value': 0.0014}]
 
-        Setting return_feature_values to True returns a tuple of (feature value, contribution) for each feature instead of just the contribution. Note that feature values are not returned when return_type is set to 'name_value_dicts' regardless of the setting of return_feature_values as this return type is designed for contributions only.
-
-        >>> mi.transform(single_row, return_feature_values=True, return_type="dicts")
-        [{'feature2': (np.float64(-1.2990134593088984), -0.3491295830480707)}, {'feature1': (np.float64(-1.6685316675305422), -0.0039231513013799)}, {'feature4': (np.float64(-0.6036204360190907), 0.0031653931724603)}, {'feature3': (np.float64(0.27464720361244455), 0.0013787609499949)}]
-
-        Return as a list of single-key dicts:
-
-        >>> mi.transform(single_row, return_type='dicts', return_precision=4)
-        [{'feature2': -0.3491}, {'feature1': -0.0039}, {'feature4': 0.0032}, {'feature3': 0.0014}]
-
-        Return as a single dict:
-
-        >>> mi.transform(single_row, return_type='single_dict', return_precision=4)
-        {'feature2': -0.3491, 'feature1': -0.0039, 'feature4': 0.0032, 'feature3': 0.0014}
-
-        Return as a list of tuples:
-
-        >>> mi.transform(single_row, return_type='tuples', return_precision=4)
-        [('feature2', -0.3491), ('feature1', -0.0039), ('feature4', 0.0032), ('feature3', 0.0014)]
-
         Rename features using a one-to-one mapping. You can provide a `feature_mapping` dictionary which can either map feature names to more interpretable names, or group features together:
 
         >>> mapping = {
@@ -520,67 +500,6 @@ class ModelInterpreter:
         ...     single_row, feature_mappings=mapping,
         ... )
         [{'Name': 'feature 2 was mapped', 'Value': -0.3491295830480707}, {'Name': 'feature 1 was mapped', 'Value': -0.0039231513013799}, {'Name': 'feature 4 was mapped', 'Value': 0.0031653931724603}, {'Name': 'feature 3 was mapped', 'Value': 0.0013787609499949}]
-
-        Grouping features together by creating groups for the number of rooms and location. The resulting grouped contributions equal the sum of the individual feature contributions:
-
-        >>> grouping_dict = {
-        ...     "feature1": "feature 1 was mapped",
-        ...     "feature2": "feature 2 and 3 was mapped",
-        ...     "feature3": "feature 2 and 3 was mapped",
-        ...     "feature4": "feature 4 was mapped",
-        ... }
-        >>> mi.transform(
-        ...     single_row, feature_mappings=grouping_dict,
-        ... )
-        [{'Name': 'feature 2 and 3 was mapped', 'Value': -0.3477508220980758}, {'Name': 'feature 1 was mapped', 'Value': -0.0039231513013799}, {'Name': 'feature 4 was mapped', 'Value': 0.0031653931724603}]
-
-        Return only the top n features:
-
-        >>> mi.transform(
-        ...     single_row, n_return=2,
-        ...     return_type='single_dict', return_precision=4,
-        ... )
-        {'feature2': -0.3491, 'feature1': -0.0039}
-
-        Sort by absolute contribution (explicitly using sorting='abs'):
-
-        >>> mi.transform(
-        ...     single_row, sorting='abs',
-        ...     return_type='single_dict', return_precision=4,
-        ... )
-        {'feature2': -0.3491, 'feature1': -0.0039, 'feature4': 0.0032, 'feature3': 0.0014}
-
-        Sort in descending order (positive first):
-
-        >>> mi.transform(
-        ...     single_row, sorting='positive',
-        ...     return_type='single_dict', return_precision=4,
-        ... )
-        {'feature4': 0.0032, 'feature3': 0.0014, 'feature1': -0.0039, 'feature2': -0.3491}
-
-        Sort by label (descending when pred_label > 0):
-
-        >>> mi.transform(
-        ...     single_row, sorting='label', pred_label=1,
-        ...     return_type='single_dict', return_precision=4,
-        ... )
-        {'feature4': 0.0032, 'feature3': 0.0014, 'feature1': -0.0039, 'feature2': -0.3491}
-
-        Sort by label (ascending when pred_label = 0):
-
-        >>> mi.transform(
-        ...     single_row, sorting='label', pred_label=0,
-        ...     return_type='single_dict', return_precision=4,
-        ... )
-        {'feature2': -0.3491, 'feature1': -0.0039, 'feature3': 0.0014, 'feature4': 0.0032}
-
-        Get contributions for the other class (class 0):
-
-        >>> mi.transform(
-        ...     single_row, predict_class=0,
-        ...     return_type='single_dict', return_precision=4,
-        ... )
-        {'feature2': 0.3491, 'feature1': 0.0039, 'feature4': -0.0032, 'feature3': -0.0014}
 
         **Multiclass classification (RandomForest):**
 
@@ -652,30 +571,6 @@ class ModelInterpreter:
         ...     single_row, return_type='single_dict', return_precision=4,
         ... )
         {'MedInc': -0.7147, 'AveOccup': -0.2794, 'Latitude': -0.2189, 'Longitude': -0.1588, 'AveRooms': 0.0442, 'Population': -0.0064, 'HouseAge': -0.0029, 'AveBedrms': -0.0015}
-
-        **XGBoost regression with one-hot encoding:**
-
-        >>> import pandas as pd
-        >>> X, y = fetch_california_housing(return_X_y=True, as_frame=True)
-        >>> X["Over25"] = ["Over25" if a > 25 else "Under25" for a in X["HouseAge"]]
-        >>> X = pd.get_dummies(X, columns=["Over25"])
-        >>> X = X.drop(columns="HouseAge")
-        >>> X_train, X_test, y_train, y_test = train_test_split(
-        ...     X, y, test_size=0.33, random_state=42,
-        ... )
-        >>> dtrain = xgb.DMatrix(data=X_train, label=y_train)
-        >>> feature_names = list(X.columns)
-        >>> xgb_model = xgb.train(
-        ...     params={"seed": 1, "max_depth": 6, "min_child_weight": 20},
-        ...     dtrain=dtrain,
-        ... )
-        >>> mi = ModelInterpreter(feature_names, one_hot_cols=["Over25"])
-        >>> _ = mi.fit(xgb_model)
-        >>> single_row = X_test[feature_names].head(1)
-        >>> mi.transform(
-        ...     single_row, return_type='single_dict', return_precision=4,
-        ... )
-        {'MedInc': -0.7085, 'AveOccup': -0.2854, 'Longitude': -0.2149, 'Latitude': -0.1999, 'Over25': -0.0241, 'Population': -0.0048, 'AveRooms': 0.0046, 'AveBedrms': -0.0011}
 
         **Non-standard models (KernelExplainer):**
 
