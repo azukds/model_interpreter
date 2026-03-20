@@ -6,7 +6,9 @@ cfgv==3.4.0
     # via pre-commit
 cloudpickle==3.1.0
     # via shap
-colorama==0.4.6 ; sys_platform == 'win32' or platform_system == 'Windows'
+codespell==2.4.1
+    # via model-interpreter (pyproject.toml)
+colorama==0.4.6 ; sys_platform == 'win32'
     # via
     #   pytest
     #   tqdm
@@ -63,6 +65,8 @@ pluggy==1.5.0
     # via pytest
 pre-commit==4.0.1
     # via model-interpreter (pyproject.toml)
+prek==0.3.4
+    # via model-interpreter (pyproject.toml)
 py-cpuinfo==9.0.0
     # via pytest-benchmark
 pytest==8.3.3
@@ -113,6 +117,8 @@ tqdm==4.67.1
     # via shap
 typing-extensions==4.12.2
     # via mypy
+typos==1.44.0
+    # via model-interpreter (pyproject.toml)
 tzdata==2024.2
     # via pandas
 virtualenv==20.28.0

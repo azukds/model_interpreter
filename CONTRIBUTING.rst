@@ -1,7 +1,7 @@
 Contributing
 ============
 
-Thanks for your interest in contributing to this package! No contibution is too small! We're hoping it can be made even better through community contributions.
+Thanks for your interest in contributing to this package! No contribution is too small! We're hoping it can be made even better through community contributions.
 
 Requests and feedback
 ---------------------
@@ -24,7 +24,7 @@ Then clone the fork (or this repository if internal);
      git clone https://github.com/lvgig/model_interpreter.git
      cd model_interpreter
 
-Then install tubular and dependencies for development;
+Then install model_interpreter and dependencies for development;
 
    .. code::
 

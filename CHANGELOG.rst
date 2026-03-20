@@ -16,13 +16,23 @@ Subsections for each version can be one of the following;
 
 Each individual change should have a link to the pull request after the description of the change.
 
+1.0.1 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- Reactivated CI and added PR approval guardrails (https://github.com/azukds/model_interpreter/pull/8)
+- Updated CI configuration to follow tubular's python-package.yml (https://github.com/azukds/model_interpreter/pull/8)
+- Switched to prek for pre-commit checks (https://github.com/azukds/model_interpreter/pull/8)
+- Fixed spelling mistakes and removed stale tubular references (https://github.com/azukds/model_interpreter/pull/8)
+
 1.0.0 (2024-08-06)
 -------------------
 
 Added
 ^^^^^
 - Moved config to pyproject.toml approach
-- Updated envs and impacted logic (e.g to accomodate new shap behaviour)
+- Updated envs and impacted logic (e.g to accommodate new shap behaviour)
 - Setup devcontainer config for codespaces
 - Updated build pipeline
 
