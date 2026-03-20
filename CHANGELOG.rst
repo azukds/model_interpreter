@@ -25,6 +25,7 @@ Changed
 - Updated CI configuration to follow tubular's python-package.yml (https://github.com/azukds/model_interpreter/pull/8)
 - Switched to prek for pre-commit checks (https://github.com/azukds/model_interpreter/pull/8)
 - Fixed spelling mistakes and removed stale tubular references (https://github.com/azukds/model_interpreter/pull/8)
+- Added example doctests to interpreter.py (https://github.com/azukds/model_interpreter/pull/10)
 
 1.0.0 (2024-08-06)
 -------------------
