@@ -16,7 +16,7 @@ authors = [
     {name = "LV GI Data Science Team", email = "#DataSciencePackages@lv.co.uk"},
 ]
 description  = "this package contains functionality for reporting on how your ML model is making decisions"
-requires-python = ">= 3.9"
+requires-python = ">= 3.10"
 dynamic = ["version"]
 
 dependencies = [

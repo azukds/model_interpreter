@@ -16,7 +16,14 @@ Subsections for each version can be one of the following;
 
 Each individual change should have a link to the pull request after the description of the change.
 
-1.0.1 (unreleased)
+2.0.0 (unreleased)
+------------------
+
+Changed
+^^^^^^^
+- chore: bump minimum python to 310, upgrade black for security fix (need for py310 forced a major version upgrade)
+
+1.1.1 (2024-03-26)
 ------------------
 
 Changed
@@ -27,7 +34,7 @@ Changed
 - Fixed spelling mistakes and removed stale tubular references (https://github.com/azukds/model_interpreter/pull/8)
 - Added example doctests to interpreter.py (https://github.com/azukds/model_interpreter/pull/10)
 
-1.0.0 (2024-08-06)
+1.1.0 (2024-11-28)
 -------------------
 
 Added
