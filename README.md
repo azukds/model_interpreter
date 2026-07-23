@@ -46,7 +46,7 @@ model_interpreter.fit(clf)
 
 # return feature contribution importances for a single row
 single_row = X.head(1)
-contribution_list = single_model_contribution.transform(
+contribution_list = model_interpreter.transform(
     single_row, return_type="name_value_dicts"
 )
 
@@ -56,6 +56,20 @@ print(contribution_list)
 Which will return the following output:
 ```
 [{'Name': 'feature2', 'Value': -0.349129583}, {'Name': 'feature1', 'Value': -0.0039231513}, {'Name': 'feature4', 'Value': 0.0031653932}, {'Name': 'feature3', 'Value': 0.0013787609}]
+```
+
+If you want feature values in the output, use `return_feature_values=True`:
+```
+contribution_list = model_interpreter.transform(
+    single_row, return_type="name_value_dicts", return_feature_values=True
+)
+
+print(contribution_list)
+```
+
+Which will return output like:
+```
+[{'Name': 'feature2', 'Value': -0.349129583, 'FeatureValue': 3.5}, {'Name': 'feature1', 'Value': -0.0039231513, 'FeatureValue': 22.0}, {'Name': 'feature4', 'Value': 0.0031653932, 'FeatureValue': 1.0}, {'Name': 'feature3', 'Value': 0.0013787609, 'FeatureValue': 0.5}]
 ```
 
 
