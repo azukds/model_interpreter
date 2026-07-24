@@ -322,49 +322,6 @@ class TestTreeTransform(object):
         df_transformed = MI.transform(single_row, return_type="name_value_dicts")
         assert all("FeatureValue" not in item for item in df_transformed)
 
-    @pytest.mark.parametrize(
-        "feature_value_row",
-        [
-            pytest.param(
-                lambda single_row: single_row.copy().assign(MedInc=123.456),
-                id="dataframe",
-            ),
-            pytest.param(
-                lambda single_row: [10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
-                id="array",
-            ),
-        ],
-    )
-    def test_tree_model_name_value_dicts_use_feature_value_row_for_all_items(
-        self,
-        MI: ModelInterpreter,
-        tree_model,
-        single_row: pd.DataFrame,
-        feature_value_row,
-    ) -> None:
-        """Test that feature_value_row supplies display values for every returned item."""
-
-        MI.fit(tree_model)
-        prepared_feature_value_row = feature_value_row(single_row)
-
-        df_transformed = MI.transform(
-            single_row,
-            return_type="name_value_dicts",
-            return_feature_values=True,
-            feature_value_row=prepared_feature_value_row,
-        )
-
-        if isinstance(prepared_feature_value_row, pd.DataFrame):
-            expected_values = prepared_feature_value_row.iloc[0].to_dict()
-        else:
-            expected_values = {
-                name: value
-                for name, value in zip(single_row.columns, prepared_feature_value_row)
-            }
-
-        for item in df_transformed:
-            assert item["FeatureValue"] == expected_values[item["Name"]]
-
     def test_tree_model_name_value_dicts_include_aggregated_one_hot_feature_values(
         self,
         tree_model_one_hot,

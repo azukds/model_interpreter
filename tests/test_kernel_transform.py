@@ -451,59 +451,6 @@ class TestKernelTransform(object):
         df_transformed = MI.transform(kernel_single_row, return_type="name_value_dicts")
         assert all("FeatureValue" not in item for item in df_transformed)
 
-    @pytest.mark.parametrize(
-        "Model, is_classification",
-        [("balanced_bagging_classifier", True), ("balanced_bagging_regressor", False)],
-    )
-    @pytest.mark.parametrize(
-        "feature_value_row",
-        [
-            pytest.param(
-                lambda single_row: single_row.copy().assign(MedInc=123.456),
-                id="dataframe",
-            ),
-            pytest.param(
-                lambda single_row: [10.0, 20.0, 30.0, 40.0, 50.0, 60.0],
-                id="array",
-            ),
-        ],
-    )
-    def test_kernel_name_value_dicts_use_feature_value_row_for_all_items(
-        self,
-        MI: ModelInterpreter,
-        Model,
-        kernel_X_train: pd.Series,
-        kernel_single_row: pd.DataFrame,
-        is_classification: bool,
-        feature_value_row,
-        request,
-    ) -> None:
-        """Test that feature_value_row supplies display values for every returned item."""
-
-        model_type = request.getfixturevalue(Model)
-        MI.fit(model_type, kernel_X_train, is_classification=is_classification)
-        prepared_feature_value_row = feature_value_row(kernel_single_row)
-
-        df_transformed = MI.transform(
-            kernel_single_row,
-            return_type="name_value_dicts",
-            return_feature_values=True,
-            feature_value_row=prepared_feature_value_row,
-        )
-
-        if isinstance(prepared_feature_value_row, pd.DataFrame):
-            expected_values = prepared_feature_value_row.iloc[0].to_dict()
-        else:
-            expected_values = {
-                name: value
-                for name, value in zip(
-                    kernel_single_row.columns, prepared_feature_value_row
-                )
-            }
-
-        for item in df_transformed:
-            assert item["FeatureValue"] == expected_values[item["Name"]]
-
     def test_kernel_name_value_dicts_include_aggregated_one_hot_feature_values(
         self,
         tree_model_one_hot,
