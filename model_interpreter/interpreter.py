@@ -517,6 +517,21 @@ class ModelInterpreter:
         >>> mi.transform(single_row, return_precision=4)
         [{'Name': 'feature2', 'Value': -0.3491}, {'Name': 'feature1', 'Value': -0.0039}, {'Name': 'feature4', 'Value': 0.0032}, {'Name': 'feature3', 'Value': 0.0014}]
 
+        Use feature_value_row to display custom feature values while keeping the
+        contribution calculation based on the original single row:
+
+        >>> import pandas as pd
+        >>> feature_value_frame = pd.DataFrame(
+        ...     [[10.0, 20.0, 30.0, 40.0]], columns=features
+        ... )
+        >>> mi.transform(
+        ...     single_row,
+        ...     return_feature_values=True,
+        ...     return_type='name_value_dicts',
+        ...     feature_value_row=feature_value_frame,
+        ... )
+        [{'Name': 'feature2', 'Value': -0.3491295830480707, 'FeatureValue': np.float64(20.0)}, {'Name': 'feature1', 'Value': -0.0039231513013799, 'FeatureValue': np.float64(10.0)}, {'Name': 'feature4', 'Value': 0.0031653931724603, 'FeatureValue': np.float64(40.0)}, {'Name': 'feature3', 'Value': 0.0013787609499949, 'FeatureValue': np.float64(30.0)}]
+
         Rename features using a one-to-one mapping. You can provide a `feature_mapping` dictionary which can either map feature names to more interpretable names, or group features together:
 
         >>> mapping = {
