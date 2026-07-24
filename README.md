@@ -67,7 +67,7 @@ contribution_list = model_interpreter.transform(
 print(contribution_list)
 ```
 
-Which will return output like:
+Which will then return output like:
 ```
 [{'Name': 'feature2', 'Value': -0.349129583, 'FeatureValue': 3.5}, {'Name': 'feature1', 'Value': -0.0039231513, 'FeatureValue': 22.0}, {'Name': 'feature4', 'Value': 0.0031653932, 'FeatureValue': 1.0}, {'Name': 'feature3', 'Value': 0.0013787609, 'FeatureValue': 0.5}]
 ```
