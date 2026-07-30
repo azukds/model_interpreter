@@ -327,7 +327,10 @@ class ModelInterpreter:
                 "the number of elements in feature_names should be the same as that in single_row"
             )
 
-        dict_value = dict(zip(self.feature_names, feature_values))
+        dict_value = {
+            k: v.item() if hasattr(v, "item") else v
+            for k, v in zip(self.feature_names, feature_values)
+        }
         dict_contrib = dict(zip(self.feature_names, shap_values))
 
         # cast shap values to python float and round to specified precision
@@ -530,7 +533,7 @@ class ModelInterpreter:
         ...     return_type='name_value_dicts',
         ...     feature_value_row=feature_value_frame,
         ... )
-        [{'Name': 'feature2', 'Value': -0.3491295830480707, 'FeatureValue': np.float64(20.0)}, {'Name': 'feature1', 'Value': -0.0039231513013799, 'FeatureValue': np.float64(10.0)}, {'Name': 'feature4', 'Value': 0.0031653931724603, 'FeatureValue': np.float64(40.0)}, {'Name': 'feature3', 'Value': 0.0013787609499949, 'FeatureValue': np.float64(30.0)}]
+        [{'Name': 'feature2', 'Value': -0.3491295830480707, 'FeatureValue': 20.0}, {'Name': 'feature1', 'Value': -0.0039231513013799, 'FeatureValue': 10.0}, {'Name': 'feature4', 'Value': 0.0031653931724603, 'FeatureValue': 40.0}, {'Name': 'feature3', 'Value': 0.0013787609499949, 'FeatureValue': 30.0}]
 
         Rename features using a one-to-one mapping. You can provide a `feature_mapping` dictionary which can either map feature names to more interpretable names, or group features together:
 
