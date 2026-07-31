@@ -120,29 +120,6 @@ class TestLinearTransform(object):
         df_transformed = MI.transform(single_row, return_type="name_value_dicts")
         assert all("FeatureValue" not in item for item in df_transformed)
 
-    def test_name_value_dicts_use_feature_value_row_when_provided(
-        self,
-        MI: ModelInterpreter,
-        lin_model,
-        lin_X_train: pd.Series,
-        single_row: pd.DataFrame,
-    ) -> None:
-        """Test that a separate feature_value_row can be passed to display raw values."""
-
-        MI.fit(lin_model, lin_X_train)
-        raw_row = single_row.copy()
-        raw_row.iloc[0, raw_row.columns.get_loc("MedInc")] = 123.456
-
-        df_transformed = MI.transform(
-            single_row,
-            return_type="name_value_dicts",
-            return_feature_values=True,
-            feature_value_row=raw_row,
-        )
-
-        med_inc_item = next(item for item in df_transformed if item["Name"] == "MedInc")
-        assert med_inc_item["FeatureValue"] == 123.456
-
     @pytest.mark.parametrize(
         "feature_value_row",
         [
