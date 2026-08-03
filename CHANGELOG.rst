@@ -22,6 +22,8 @@ Each individual change should have a link to the pull request after the descript
 Changed
 ^^^^^^^
 - chore: bump minimum python to 310, upgrade black for security fix (need for py310 forced a major version upgrade)
+- Added support for returning human-readable feature values via ``return_feature_values=True`` and an optional ``feature_value_row`` input for tree, linear, and kernel explainers
+- Expanded regression tests covering ``feature_value_row`` for DataFrame and array-style inputs across transform suites
 
 1.1.1 (2024-03-26)
 ------------------

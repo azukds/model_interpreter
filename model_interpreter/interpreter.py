@@ -246,7 +246,11 @@ class ModelInterpreter:
         return dict_value_c, dict_contrib  # values, contrib after inverse ohe
 
     def _get_single_model_contribution(
-        self, single_row, predict_class_index, return_precision
+        self,
+        single_row,
+        predict_class_index,
+        return_precision,
+        feature_value_row=None,
     ):
         """
         get the contribution breakdown of one observation rounded to a specified
@@ -264,17 +268,31 @@ class ModelInterpreter:
                 Only change for multi-class predictions to obtain shap values for
                 the defined index class in the list.
 
+        feature_value_row: array like or pandas DataFrame, default=None
+                Optional row used to populate returned feature values when
+                return_feature_values=True. If omitted, values are taken from
+                the model input row used for SHAP explanation.
         """
         if not isinstance(predict_class_index, int):
             raise ValueError("predicted class not a valid int")
 
         if isinstance(single_row, pd.DataFrame):
             number_of_features = single_row.shape[1]
-            feature_values = single_row.values[0]
-
         else:
             number_of_features = len(single_row[0])
-            feature_values = single_row[0]
+
+        if feature_value_row is None:
+            feature_value_row = single_row
+
+        if isinstance(feature_value_row, pd.DataFrame):
+            feature_values = feature_value_row.values[0]
+        else:
+            feature_values = feature_value_row[0]
+
+        if len(feature_values) != number_of_features:
+            raise ValueError(
+                "the number of elements in feature_names should be the same as that in feature_value_row"
+            )
 
         shap_vals = self.explainer.shap_values(single_row)
 
@@ -309,7 +327,10 @@ class ModelInterpreter:
                 "the number of elements in feature_names should be the same as that in single_row"
             )
 
-        dict_value = dict(zip(self.feature_names, feature_values))
+        dict_value = {
+            k: v.item() if hasattr(v, "item") else v
+            for k, v in zip(self.feature_names, feature_values)
+        }
         dict_contrib = dict(zip(self.feature_names, shap_values))
 
         # cast shap values to python float and round to specified precision
@@ -401,6 +422,7 @@ class ModelInterpreter:
         enable_categorical: bool = False,
         predict_class: int = 1,
         return_precision: int = 16,
+        feature_value_row=None,
     ):
         """
         wrap final response message
@@ -429,21 +451,24 @@ class ModelInterpreter:
                 label value for 'label' sorting option, described above
 
             return_feature_values: bool, default = False
-                flag weather to return feature values in response. These will
-                not be returned if return_type is set to 'name_value_dicts'
+                flag whether to return feature values in response. When True,
+                feature values are returned alongside contributions for supported
+                return types.
 
             return_type: str, default = 'name_value_dicts'
                 format for return
-                - 'name_value_dicts': list of dictionary pairs containing a dict
-                  with Name: feature and Value: contribution. This return_type
-                  ignores feature values and does not return them
-                           [{"Name": feature, "Value": contribution}, ... ]
+                - 'name_value_dicts': list of dictionaries containing Name,
+                  Value, and optionally FeatureValue when return_feature_values=True
+                           [{"Name": feature, "Value": contribution, "FeatureValue": value}, ... ]
                 - 'dicts': list of dictionaries
-                           [{feature: contribution}, ... ]
+                           [{feature: contribution}, ... ] or
+                           [{feature: (value, contribution)}, ... ] when requested
                 - 'single_dict': single dict of features names and contributions
-                        {feature: contribution, ... }
+                        {feature: contribution, ... } or
+                        {feature: (value, contribution), ... } when requested
                 - 'tuples': list of tuples
-                            [(feature, contribution), ... ]
+                            [(feature, contribution), ... ] or
+                            [(feature, value, contribution), ... ] when requested
 
             enable_categorical: bool, default = False
                 Flag to represent if the model predicts on categorical fields and must
@@ -458,6 +483,11 @@ class ModelInterpreter:
                 how many decimal places to round the shap values in the return
                 message to. Default is 16 which maintains the decimal places
                 returned by shap explainers
+
+            feature_value_row: array like or pandas DataFrame, default=None
+                Optional row used to populate returned feature values when
+                return_feature_values=True. If omitted, feature values are taken
+                from the model input row used to compute SHAP.
 
         Return:
         -----------
@@ -489,6 +519,21 @@ class ModelInterpreter:
 
         >>> mi.transform(single_row, return_precision=4)
         [{'Name': 'feature2', 'Value': -0.3491}, {'Name': 'feature1', 'Value': -0.0039}, {'Name': 'feature4', 'Value': 0.0032}, {'Name': 'feature3', 'Value': 0.0014}]
+
+        Use feature_value_row to display custom feature values while keeping the
+        contribution calculation based on the original single row:
+
+        >>> import pandas as pd
+        >>> feature_value_frame = pd.DataFrame(
+        ...     [[10.0, 20.0, 30.0, 40.0]], columns=features
+        ... )
+        >>> mi.transform(
+        ...     single_row,
+        ...     return_feature_values=True,
+        ...     return_type='name_value_dicts',
+        ...     feature_value_row=feature_value_frame,
+        ... )
+        [{'Name': 'feature2', 'Value': -0.3491295830480707, 'FeatureValue': 20.0}, {'Name': 'feature1', 'Value': -0.0039231513013799, 'FeatureValue': 10.0}, {'Name': 'feature4', 'Value': 0.0031653931724603, 'FeatureValue': 40.0}, {'Name': 'feature3', 'Value': 0.0013787609499949, 'FeatureValue': 30.0}]
 
         Rename features using a one-to-one mapping. You can provide a `feature_mapping` dictionary which can either map feature names to more interpretable names, or group features together:
 
@@ -609,9 +654,11 @@ class ModelInterpreter:
 
         if not enable_categorical:
             single_row = np.array(single_row).reshape(1, -1)
+            if feature_value_row is not None:
+                feature_value_row = np.array(feature_value_row).reshape(1, -1)
 
         dict_value, dict_contrib = self._get_single_model_contribution(
-            single_row, predict_class, return_precision
+            single_row, predict_class, return_precision, feature_value_row
         )
 
         # apply mapping or grouping if applicable
@@ -664,10 +711,6 @@ class ModelInterpreter:
             dict_response = dict(list(dict_response.items())[0:n_return])
 
         if return_type == "name_value_dicts":
-            if return_feature_values:
-                logging.warning(
-                    "Feature values not returned when return_type set to name_value_dicts"
-                )
             return self._name_value_dicts_return(dict_response)
         if return_type == "dicts":
             return self._dicts_return(dict_response)
@@ -690,20 +733,22 @@ class ModelInterpreter:
         >>> ModelInterpreter._name_value_dicts_return({'a': 0.5, 'b': -0.3})
         [{'Name': 'a', 'Value': 0.5}, {'Name': 'b', 'Value': -0.3}]
 
-        Tuple values (feature_value, contribution) are reduced to contribution only:
+        Tuple values (feature_value, contribution) preserve feature values in the output when requested:
 
         >>> ModelInterpreter._name_value_dicts_return({'a': (1.0, 0.5), 'b': (2.0, -0.3)})
-        [{'Name': 'a', 'Value': 0.5}, {'Name': 'b', 'Value': -0.3}]
+        [{'Name': 'a', 'Value': 0.5, 'FeatureValue': 1.0}, {'Name': 'b', 'Value': -0.3, 'FeatureValue': 2.0}]
         """
 
         dicts = []
 
         for k, v in dict_response.items():
-            # if feature values in contribution, only feature importances are returned
             if isinstance(v, tuple):
-                v = v[1]
-
-            dicts.append({"Name": k, "Value": v})
+                feature_value, contribution = v
+                dicts.append(
+                    {"Name": k, "Value": contribution, "FeatureValue": feature_value}
+                )
+            else:
+                dicts.append({"Name": k, "Value": v})
 
         return dicts
 
@@ -745,6 +790,10 @@ class ModelInterpreter:
         tups = []
 
         for k, v in dict_response.items():
-            tups.append((k, v))
+            if isinstance(v, tuple):
+                feature_value, contribution = v
+                tups.append((k, feature_value, contribution))
+            else:
+                tups.append((k, v))
 
         return tups
