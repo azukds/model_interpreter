@@ -73,6 +73,46 @@ Which will then return output like:
 ```
 
 
+## LLM explanations
+
+The `model_interpreter.shap_llm` module explains claims predicted as fraud in plain language using an LLM. For each flagged claim, the claim features, its top SHAP values and the prediction are combined with dataset statistics and feature interactions and rendered into a prompt template. Claims not predicted as fraud are never sent to the LLM.
+
+Create a `ShapLLMExplainer` once (e.g. at service start-up) from the dataset statistics, feature interactions and prompt template files, then pass the output of `transform` to `ModelInterpreter.explain_with_llm` for each prediction:
+
+```python
+from model_interpreter.shap_llm import ShapLLMExplainer
+
+llm_explainer = ShapLLMExplainer(
+    dataset_stats_path="carclaims_knowledge.csv",
+    feature_interactions_path="carclaims_feature_interactions.csv",
+    prompt_template_path="prompts/fraud_explanation_prompt.txt",
+    top_n_shap=10,
+)
+
+contribution_list = model_interpreter.transform(
+    single_row, return_type="name_value_dicts"
+)
+
+explanation = model_interpreter.explain_with_llm(
+    contribution_list,
+    claim_features=raw_claim_row,  # the claim's own (unencoded) fields
+    predicted_fraud=int(model.predict(single_row)[0]),
+    llm_explainer=llm_explainer,
+)  # LLM explanation text, or None if not predicted as fraud
+```
+
+`explain_with_llm` accepts the output of `transform` in any `return_type`, with or without feature values. `llm_explainer.explain(claim_features, shap_values, predicted_fraud)` does the same outside the interpreter, e.g. for SHAP values given as a `{feature: shap_value}` dict.
+
+SHAP feature names are matched to the feature names in the dataset statistics and feature interactions files, so the prompt uses one consistent naming:
+
+- ColumnTransformer prefixes are removed (`num__Age` -> `Age`),
+- one hot encoded columns are combined and their SHAP values summed (`cat__Make_Honda`, `cat__Make_Ford` -> `Make`),
+- any other names can be mapped with `ShapLLMExplainer(..., feature_name_mapping={"f0": "Age"})`.
+
+The prompt template is read from file and must contain the placeholders `{dataset_knowledge}`, `{feature_interactions}`, `{claim_data}`, `{prediction}`, `{shap_explanation}` and `{top_n_shap}`. `predicted_fraud` must be the predicted class (0 or 1), not a probability. Errors from the LLM client are raised to the caller. To use Azure OpenAI or another compatible client, pass it as `ShapLLMExplainer(..., client=...)`.
+
+An end-to-end example that trains an XGBoost fraud model, fits a `ModelInterpreter` and explains the first claims predicted as fraud with `explain_with_llm` is in [examples/XGB/run_xgb_carclaims_llm.py](examples/XGB/run_xgb_carclaims_llm.py).
+
 ## Installation
 
 The easiest way to get `model_interpreter` is directly from [pypi](https://pypi.org/project/model_interpreter/) with;

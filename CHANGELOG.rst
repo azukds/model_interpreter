@@ -19,6 +19,10 @@ Each individual change should have a link to the pull request after the descript
 2.0.0 (unreleased)
 ------------------
 
+Added
+^^^^^
+- Added ``model_interpreter.shap_llm`` module for plain-language LLM explanations of claims predicted as fraud, built from the claim features, SHAP values, prediction, dataset statistics and feature interactions. ``ModelInterpreter.explain_with_llm`` explains a single prediction from the output of ``transform``. Claims not predicted as fraud are not sent to the LLM. Requires the new ``llm`` optional dependency (``pip install model_interpreter[llm]``)
+
 Changed
 ^^^^^^^
 - chore: bump minimum python to 310, upgrade black for security fix (need for py310 forced a major version upgrade)

@@ -5,6 +5,7 @@ import pandas as pd
 from shap.utils._exceptions import InvalidModelError
 
 from model_interpreter._version import __version__
+from model_interpreter.shap_llm import ShapLLMExplainer
 
 
 class ModelInterpreter:
@@ -797,3 +798,83 @@ class ModelInterpreter:
                 tups.append((k, v))
 
         return tups
+
+    def explain_with_llm(
+        self,
+        contributions,
+        claim_features,
+        predicted_fraud,
+        llm_explainer,
+    ):
+        """
+        Generate a plain-language LLM explanation for a single prediction from
+        its feature contributions, using model_interpreter.shap_llm.
+
+        The LLM is only called for observations predicted as fraud
+        (predicted_fraud == 1); for any other prediction None is returned. The
+        prompt combines the contributions, the claim features, the prediction
+        and the dataset statistics and feature interactions held by
+        llm_explainer.
+
+        Parameters:
+        -----------
+        contributions: list or dict
+            output of transform() for the observation, in any return_type
+            ('name_value_dicts', 'dicts', 'tuples', 'single_dict'), with or
+            without feature values. Feature names are matched to the feature
+            names in the dataset statistics, e.g. 'num__Age' -> 'Age', and
+            the contributions of one hot encoded columns are summed, e.g.
+            'cat__Make_Honda' -> 'Make'
+
+        claim_features: dict, pd.Series or single row pd.DataFrame
+            the observation's own (unencoded) fields, sent to the LLM as the
+            claim data
+
+        predicted_fraud: int
+            the model's predicted class for the observation, 1 (fraud) or 0
+            (not fraud), e.g. from model.predict
+
+        llm_explainer: model_interpreter.shap_llm.ShapLLMExplainer
+            configured LLM explainer holding the LLM client, prompt template,
+            dataset statistics and feature interactions. Create it once and
+            reuse it for every observation. It is passed per call rather than
+            stored on the interpreter so that a fitted ModelInterpreter stays
+            picklable
+
+        Returns:
+        -----------
+        LLM explanation as a str, or None if the observation is not predicted
+        as fraud
+
+        Examples:
+        ---------
+        Requires the dataset statistics, feature interactions and prompt
+        template files and an OPENAI_API_KEY, so it is not run as a doctest:
+
+        >>> from model_interpreter.shap_llm import ShapLLMExplainer
+        >>> llm_explainer = ShapLLMExplainer(  # doctest: +SKIP
+        ...     dataset_stats_path="carclaims_knowledge.csv",
+        ...     feature_interactions_path="carclaims_feature_interactions.csv",
+        ...     prompt_template_path="prompts/fraud_explanation_prompt.txt",
+        ... )
+        >>> contribution_list = model_interpreter.transform(  # doctest: +SKIP
+        ...     single_row, return_type="name_value_dicts"
+        ... )
+        >>> explanation = model_interpreter.explain_with_llm(  # doctest: +SKIP
+        ...     contribution_list,
+        ...     claim_features=raw_claim_row,
+        ...     predicted_fraud=int(model.predict(single_row)[0]),
+        ...     llm_explainer=llm_explainer,
+        ... )
+        """
+
+        if not isinstance(llm_explainer, ShapLLMExplainer):
+            raise TypeError(
+                f"llm_explainer should be a model_interpreter.shap_llm.ShapLLMExplainer, instead received type: {type(llm_explainer)}"
+            )
+
+        return llm_explainer.explain(
+            claim_features=claim_features,
+            shap_values=contributions,
+            predicted_fraud=predicted_fraud,
+        )
